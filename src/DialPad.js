@@ -233,7 +233,8 @@ export class DialPad extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      screenMainLine: ''
+      screenMainLine: '',
+      numberValid: true
     }
   };
 
@@ -269,7 +270,7 @@ export class DialPad extends React.Component {
   }
 
   keyPressListener(e) {
-    if ((e.keyCode > 47 && e.keyCode < 58) || e.keyCode === 187) { //listen to 0-9 & +
+    if ((e.keyCode > 47 && e.keyCode < 58) || (e.keyCode > 95 && e.keyCode < 108) || e.keyCode === 187) { //listen to 0-9 & +
       this.buttonPress(e.key, this.props.activeCall);
     } else if (e.keyCode === 8) { //listen for backspace
       this.backspace();
@@ -290,12 +291,17 @@ export class DialPad extends React.Component {
     if (key === '+') {
       this.setState({plus: this.state.plus === '+' ? '' : '+'});
     } else {
-      this.setState({screenMainLine: (typeof this.state.screenMainLine === 'undefined' ? key : this.state.screenMainLine + key)});
+      this.setState({numberValid: true, screenMainLine: (typeof this.state.screenMainLine === 'undefined' ? key : this.state.screenMainLine + key)});
     }
   }
 
   backspace() {
     this.setState({screenMainLine: this.state.screenMainLine.substring(0, this.state.screenMainLine.length - 1)});
+  }
+
+  numberValid(number){
+    console.log(number);
+    return number.length > 0 && number.length <= 10;
   }
 
   dial(number, from, workerContactUri) {
@@ -304,8 +310,8 @@ export class DialPad extends React.Component {
     from = typeof(this.state.transferTo) === 'object' ? this.props.workerName : from;
     const internal = typeof(this.state.transferTo) === 'object';
 
-    if (number.length > 0) {
-
+    const numberValidToDial = this.numberValid(number);
+    if(numberValidToDial) {
       fetch(`https://${this.props.runtimeDomain}/create-new-task`, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -319,6 +325,7 @@ export class DialPad extends React.Component {
       })
     } else {
       console.log('Invalid number dialed');
+      this.setState({numberValid: false});
     }
   }
 
@@ -384,7 +391,7 @@ export class DialPad extends React.Component {
       return <div/>;
     } else {
       return (
-        <div className={screen}>
+        <div className={screen} style={this.state.numberValid ? {} : {color: "red"}}>
           <div className={screenWrapper}>
             <p className={plus}>{this.state.plus}</p>
             <p className={screenMainLine}>{this.state.screenMainLine}</p>
